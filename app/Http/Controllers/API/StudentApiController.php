@@ -110,6 +110,20 @@ class StudentApiController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        $student = Student::find($id);
+
+        if (!$student) {
+            return response()->json([
+                'status' => 'fail',
+                'No student found!'
+            ], 404);
+        }
+
+        $student->delete($student);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Student deleted successfully!',
+        ], 200);
     }
 }
