@@ -74,7 +74,35 @@ class StudentApiController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        $validator = Validator::make(request()->all(),[
+            'name' => 'required',
+            'email' => 'required|unique:students,email,'.$id,
+            'gender' => 'required'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'fail',
+                'message' => $validator->errors()
+            ], 400);
+        }
+
+        $student = Student::find($id);
+
+        if (!$student) {
+            return response()->json([
+                'status' => 'fail',
+                'message' => 'No student found!'
+            ], 404);
+        }
+
+        $student->update($request->all());
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Student data updated successfully!',
+            'data' => $student
+        ]);
     }
 
     /**
