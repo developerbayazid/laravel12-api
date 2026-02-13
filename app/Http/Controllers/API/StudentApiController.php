@@ -54,7 +54,19 @@ class StudentApiController extends Controller
      */
     public function show(string $id)
     {
-        //
+        $student = Student::find($id);
+
+        if ($student) {
+            return response()->json([
+                'status' => 'success',
+                'data' => $student
+            ], 200);
+        }
+
+        return response()->json([
+            'status' => 'fail',
+            'message' => 'No Student Found!'
+        ], 404);
     }
 
     /**
