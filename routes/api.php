@@ -19,3 +19,8 @@ Route::apiResource('/students', StudentApiController::class);
 Route::post('/register', [AuthController::class, 'register'])->name('register');
 
 Route::post('/login', [AuthController::class, 'login'])->name('login');
+
+Route::group(['middleware' => 'auth:sanctum'], function(){
+    Route::get('/profile', [AuthController::class, 'profile'])->name('profile');
+});
+
