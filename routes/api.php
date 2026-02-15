@@ -17,3 +17,5 @@ Route::get('/test', [TestApiController::class, 'test'])->name('test-api');
 Route::apiResource('/students', StudentApiController::class);
 
 Route::post('/register', [AuthController::class, 'register'])->name('register');
+
+Route::post('/login', [AuthController::class, 'login'])->name('login');
