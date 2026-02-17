@@ -29,6 +29,27 @@ class AuthController extends Controller
 
         $data = $request->all();
 
+
+        //Image Upload
+        $imagePath = null;
+
+        if ($request->hasFile('profile_picture') && $request->file('profile_picture')->isValid()) {
+            $file = $request->file('profile_picture');
+
+            //Generate a unique file name
+            $fileName = time() . '_' . $file->getClientOriginalName();
+
+            //Move file to the public directory
+            $file->move(public_path('storage/profile'), $fileName);
+
+            //save the relative path to the database
+            $imagePath = 'storage/profile/' . $fileName;
+
+        }
+
+        $data['profile_picture'] = $imagePath;
+
+
         User::create($data); //It will store data in users table
 
         return response()->json([
