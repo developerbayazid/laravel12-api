@@ -29,6 +29,9 @@ Route::group(['middleware' => 'auth:sanctum'], function(){
     // Blog Category routes
     Route::apiResource('categories', BlogCategoryController::class);
 
+    // Blog Post routes
+    Route::apiResource('posts', BlogPostController::class);
+
 });
 
 Route::get('categories', [BlogCategoryController::class, 'index']);
