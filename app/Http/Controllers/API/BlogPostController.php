@@ -17,7 +17,14 @@ class BlogPostController extends Controller
      */
     public function index()
     {
-        //
+        $posts = BlogPost::get();
+
+        return response()->json([
+            'status' => 'success',
+            'count' => count($posts),
+            'data' => $posts
+        ], 200);
+
     }
 
     /**
@@ -25,6 +32,7 @@ class BlogPostController extends Controller
      */
     public function store(Request $request)
     {
+        // Validate input
         $validator = Validator::make($request->all(), [
             'user_id'     => 'required|numeric',
             'category_id' => 'required|numeric',
@@ -85,7 +93,7 @@ class BlogPostController extends Controller
             $data['status'] = 'published';
         }
 
-        BlogPost::create($data); // It will create new blog post in database
+        BlogPost::create($data); // It will create new record in database
 
         return response()->json([
             'status' => 'success',
@@ -100,7 +108,20 @@ class BlogPostController extends Controller
      */
     public function show(string $id)
     {
-        //
+        // Check blog post
+        $blogPost = BlogPost::find($id);
+
+        if (!$blogPost) {
+            return response()->json([
+                'status' => 'fail',
+                'message' => 'No blog post found!'
+            ], 404);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $blogPost
+        ], 200);
     }
 
     /**
@@ -108,7 +129,128 @@ class BlogPostController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        // Check blog post exists or not
+        $blogPost = BlogPost::find($id);
+
+        if (!$blogPost) {
+            return response()->json([
+                'status' => 'fail',
+                'message' => 'No blog post found!'
+            ], 404);
+        }
+
+        // Validate input
+        $validator = Validator::make($request->all(), [
+            'user_id'     => 'required|numeric',
+            'category_id' => 'required|numeric',
+            'title'       => 'required|unique:blog_posts,title,' . $id,
+            'content'     => 'required',
+            'thumbnail'   => 'nullable|image|max: 2048',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'fail',
+                'message' => $validator->errors()
+            ], 400);
+        }
+
+        // Check if user is logged in
+        $loggedInUser = Auth::user();
+        if ($loggedInUser->id != $request->user_id) {
+            return response()->json([
+                'status' => 'fail',
+                'message' => 'Un-authorized user'
+            ], 400);
+        }
+
+        // Check if category id is exists in DB
+        $category = BlogCategory::find($request->category_id);
+        if (!$category) {
+            return response()->json([
+                'status' => 'fail',
+                'message' => 'Category not found!'
+            ], 404);
+        }
+
+        $blogPost->title = $request->title;
+        $blogPost->user_id = $request->user_id;
+        $blogPost->category_id = $request->category_id;
+        $blogPost->slug = Str::slug($request->title);
+        $blogPost->content = $request->content;
+        $blogPost->excerpt = $request->excerpt ?? null;
+
+        $blogPost->save(); // It will update record from database
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Blog post Edited successfully!',
+            'data' => $blogPost
+        ], 201);
+
+    }
+
+    /**
+     * Update the specified post image
+     */
+    public function blogPostImage(Request $request, $id)
+    {
+        // Check blog post exists or not
+        $blogPost = BlogPost::find($id);
+
+        if (!$blogPost) {
+            return response()->json([
+                'status' => 'fail',
+                'message' => 'No blog post found!'
+            ], 404);
+        }
+
+        // Validate input
+        $validator = Validator::make($request->all(), [
+            'user_id'     => 'required|numeric',
+            'thumbnail'   => 'nullable|image|max: 2048',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'fail',
+                'message' => $validator->errors()
+            ], 400);
+        }
+
+        // Check if user is logged in
+        $loggedInUser = Auth::user();
+        if ($loggedInUser->id != $request->user_id) {
+            return response()->json([
+                'status' => 'fail',
+                'message' => 'Un-authorized user'
+            ], 400);
+        }
+
+        $imagePath = null;
+        if ($request->hasFile('thumbnail') && $request->file('thumbnail')->isValid()) {
+            $file = $request->file('thumbnail');
+
+            // Generate unique file name
+            $fileName = time() . '-' . $file->getClientOriginalName();
+
+            // Move file into storage
+            $file->move(public_path('storage/posts/'), $fileName);
+
+            // Save image path into our database
+            $imagePath = 'storage/posts/' . $fileName;
+        }
+
+        $blogPost['thumbnail'] = $imagePath;
+
+        $blogPost->save(); // It will update record in database
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Blog post image updated successfully!',
+            'data' => $blogPost
+        ], 201);
+
     }
 
     /**
@@ -116,6 +258,40 @@ class BlogPostController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        // Check blog post
+        $blogPost = BlogPost::find($id);
+
+        if (!$blogPost) {
+            return response()->json([
+                'status' => 'fail',
+                'message' => 'No blog post found!'
+            ], 404);
+        }
+
+        // Check user authorization
+        $loggedInUser = Auth::user();
+
+        if ($loggedInUser->role == 'admin')
+        {
+            BlogPost::destroy($id); // It will delete record in database
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Post deleted successfully!'
+            ], 201);
+        }
+
+        if ($loggedInUser->id != $blogPost->user_id)
+        {
+            return response()->json([
+                'status' => 'fail',
+                'message' => 'Un-authorized user!'
+            ], 400);
+        }
+
+        BlogPost::destroy($id); // It will delete record in database
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Post deleted successfully!'
+        ], 201);
     }
 }

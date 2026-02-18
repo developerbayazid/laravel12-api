@@ -28,11 +28,18 @@ Route::group(['middleware' => 'auth:sanctum'], function(){
 
     // Blog Category routes
     Route::apiResource('categories', BlogCategoryController::class);
+    Route::post('blog-post-image/{post}', [BlogPostController::class, 'blogPostImage'])->name('blog-post-image');
 
     // Blog Post routes
     Route::apiResource('posts', BlogPostController::class);
 
 });
 
+// Get all the categories
 Route::get('categories', [BlogCategoryController::class, 'index']);
+Route::get('categories/{category}', [BlogCategoryController::class, 'show']);
+
+// Get all the posts
+Route::get('posts', [BlogPostController::class, 'index']);
+Route::get('posts/{post}', [BlogPostController::class, 'show']);
 
