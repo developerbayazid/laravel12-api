@@ -26,8 +26,8 @@ Route::group(['middleware' => 'auth:sanctum'], function(){
     Route::apiResource('categories', BlogCategoryController::class)->middleware(['role:admin']);
 
     // Blog Post routes
-    Route::apiResource('posts', BlogPostController::class)->middleware(['role:admin, author']);
-    Route::post('blog-post-image/{post}', [BlogPostController::class, 'blogPostImage'])->name('blog-post-image')->middleware(['role:admin, author']);
+    Route::apiResource('posts', BlogPostController::class)->middleware(['role:admin,author']);
+    Route::post('blog-post-image/{post}', [BlogPostController::class, 'blogPostImage'])->name('blog-post-image')->middleware(['role:admin,author']);
 
 });
 

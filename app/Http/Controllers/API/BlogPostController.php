@@ -89,7 +89,7 @@ class BlogPostController extends Controller
         $data['thumbnail'] = $imagePath ?? null;
         $data['published_at'] = date('Y-m-d, H:i:s');
 
-        if (Auth::user()->role == 'admin') {
+        if (Auth::user()->role == 'admin'|| Auth::user()->role == 'author') {
             $data['status'] = 'published';
         }
 
@@ -157,12 +157,12 @@ class BlogPostController extends Controller
 
         // Check if user is logged in
         $loggedInUser = Auth::user();
-        if ($loggedInUser->id != $request->user_id) {
-            return response()->json([
-                'status' => 'fail',
-                'message' => 'Un-authorized user'
-            ], 400);
-        }
+        // if ($loggedInUser->id != $request->user_id) {
+        //     return response()->json([
+        //         'status' => 'fail',
+        //         'message' => 'Un-authorized user'
+        //     ], 400);
+        // }
 
         // Check if category id is exists in DB
         $category = BlogCategory::find($request->category_id);
@@ -173,20 +173,34 @@ class BlogPostController extends Controller
             ], 404);
         }
 
-        $blogPost->title = $request->title;
-        $blogPost->user_id = $request->user_id;
-        $blogPost->category_id = $request->category_id;
-        $blogPost->slug = Str::slug($request->title);
-        $blogPost->content = $request->content;
-        $blogPost->excerpt = $request->excerpt ?? null;
+        // Check additional condition to restrict authorized edit
+        if ($loggedInUser->id == $request->user_id || Auth::user()->role == 'admin') {
 
-        $blogPost->save(); // It will update record from database
+            $blogPost->title = $request->title;
+            $blogPost->user_id = $request->user_id;
+            $blogPost->category_id = $request->category_id;
+            $blogPost->slug = Str::slug($request->title);
+            $blogPost->content = $request->content;
+            $blogPost->excerpt = $request->excerpt ?? null;
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Blog post Edited successfully!',
-            'data' => $blogPost
-        ], 201);
+            // If user role is admin or author post status will be published
+            if (Auth::user()->role == 'admin' || Auth::user()->role == 'author') {
+                $blogPost->status = 'published';
+            }
+
+            $blogPost->save(); // It will update record from database
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Blog post Edited successfully!',
+                'data' => $blogPost
+            ], 201);
+        }
+
+         return response()->json([
+            'status' => 'fail',
+            'message' => 'You are not allow to perform this operation',
+        ], 400);
 
     }
 
