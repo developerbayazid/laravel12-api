@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('seos', function (Blueprint $table) {
             $table->id();
-            $table->integer('integer');
+            $table->integer('post_id');
             $table->string('meta_title');
             $table->text('meta_description');
             $table->text('meta_keywords');

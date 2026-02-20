@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\BlogCategory;
 use App\Models\BlogPost;
+use App\Models\Seo;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
@@ -17,7 +18,7 @@ class BlogPostController extends Controller
      */
     public function index()
     {
-        $posts = BlogPost::get();
+        $posts = BlogPost::with('seo_data')->get();
 
         return response()->json([
             'status' => 'success',
@@ -34,11 +35,14 @@ class BlogPostController extends Controller
     {
         // Validate input
         $validator = Validator::make($request->all(), [
-            'user_id'     => 'required|numeric',
-            'category_id' => 'required|numeric',
-            'title'       => 'required|unique:blog_posts,title',
-            'content'     => 'required',
-            'thumbnail'   => 'nullable|image|max: 2048',
+            'user_id'          => 'required|numeric',
+            'category_id'      => 'required|numeric',
+            'title'            => 'required|unique:blog_posts,title',
+            'content'          => 'required',
+            'thumbnail'        => 'nullable|image|max:2048',
+            'meta_title'       => 'required',
+            'meta_description' => 'required',
+            'meta_keywords'    => 'required',
         ]);
 
         if ($validator->fails()) {
@@ -93,7 +97,16 @@ class BlogPostController extends Controller
             $data['status'] = 'published';
         }
 
-        BlogPost::create($data); // It will create new record in database
+        $blogPost = BlogPost::create($data); // It will create new record in database
+
+        $seoData = [];
+
+        $seoData['post_id'] = $blogPost->id;
+        $seoData['meta_title'] = $request->meta_title;
+        $seoData['meta_description'] = $request->meta_description;
+        $seoData['meta_keywords'] = $request->meta_keywords;
+
+        Seo::create($seoData); // It will create new record in seo table
 
         return response()->json([
             'status' => 'success',
@@ -141,11 +154,14 @@ class BlogPostController extends Controller
 
         // Validate input
         $validator = Validator::make($request->all(), [
-            'user_id'     => 'required|numeric',
-            'category_id' => 'required|numeric',
-            'title'       => 'required|unique:blog_posts,title,' . $id,
-            'content'     => 'required',
-            'thumbnail'   => 'nullable|image|max: 2048',
+            'user_id'          => 'required|numeric',
+            'category_id'      => 'required|numeric',
+            'title'            => 'required|unique:blog_posts,title,' . $id,
+            'content'          => 'required',
+            'thumbnail'        => 'nullable|image|max:2048',
+            'meta_title'       => 'required',
+            'meta_description' => 'required',
+            'meta_keywords'    => 'required',
         ]);
 
         if ($validator->fails()) {
@@ -157,12 +173,6 @@ class BlogPostController extends Controller
 
         // Check if user is logged in
         $loggedInUser = Auth::user();
-        // if ($loggedInUser->id != $request->user_id) {
-        //     return response()->json([
-        //         'status' => 'fail',
-        //         'message' => 'Un-authorized user'
-        //     ], 400);
-        // }
 
         // Check if category id is exists in DB
         $category = BlogCategory::find($request->category_id);
@@ -189,6 +199,14 @@ class BlogPostController extends Controller
             }
 
             $blogPost->save(); // It will update record from database
+
+            $seoData = Seo::where('post_id', $blogPost->id)->first();
+
+            $seoData->meta_title = $request->meta_title;
+            $seoData->meta_description = $request->meta_description;
+            $seoData->meta_keywords = $request->meta_keywords;
+
+            $seoData->save(); // It will update seo data in database
 
             return response()->json([
                 'status' => 'success',
@@ -234,12 +252,6 @@ class BlogPostController extends Controller
 
         // Check if user is logged in
         $loggedInUser = Auth::user();
-        // if ($loggedInUser->id != $request->user_id) {
-        //     return response()->json([
-        //         'status' => 'fail',
-        //         'message' => 'Un-authorized user'
-        //     ], 400);
-        // }
 
          // Check additional condition to restrict authorized edit
         if ($loggedInUser->id == $request->user_id || Auth::user()->role == 'admin') {
