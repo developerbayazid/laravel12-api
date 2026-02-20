@@ -234,36 +234,45 @@ class BlogPostController extends Controller
 
         // Check if user is logged in
         $loggedInUser = Auth::user();
-        if ($loggedInUser->id != $request->user_id) {
+        // if ($loggedInUser->id != $request->user_id) {
+        //     return response()->json([
+        //         'status' => 'fail',
+        //         'message' => 'Un-authorized user'
+        //     ], 400);
+        // }
+
+         // Check additional condition to restrict authorized edit
+        if ($loggedInUser->id == $request->user_id || Auth::user()->role == 'admin') {
+
+            $imagePath = null;
+            if ($request->hasFile('thumbnail') && $request->file('thumbnail')->isValid()) {
+                $file = $request->file('thumbnail');
+
+                // Generate unique file name
+                $fileName = time() . '-' . $file->getClientOriginalName();
+
+                // Move file into storage
+                $file->move(public_path('storage/posts/'), $fileName);
+
+                // Save image path into our database
+                $imagePath = 'storage/posts/' . $fileName;
+            }
+
+            $blogPost['thumbnail'] = $imagePath;
+
+            $blogPost->save(); // It will update record in database
+
             return response()->json([
-                'status' => 'fail',
-                'message' => 'Un-authorized user'
-            ], 400);
+                'status' => 'success',
+                'message' => 'Blog post image updated successfully!',
+                'data' => $blogPost
+            ], 201);
         }
-
-        $imagePath = null;
-        if ($request->hasFile('thumbnail') && $request->file('thumbnail')->isValid()) {
-            $file = $request->file('thumbnail');
-
-            // Generate unique file name
-            $fileName = time() . '-' . $file->getClientOriginalName();
-
-            // Move file into storage
-            $file->move(public_path('storage/posts/'), $fileName);
-
-            // Save image path into our database
-            $imagePath = 'storage/posts/' . $fileName;
-        }
-
-        $blogPost['thumbnail'] = $imagePath;
-
-        $blogPost->save(); // It will update record in database
 
         return response()->json([
-            'status' => 'success',
-            'message' => 'Blog post image updated successfully!',
-            'data' => $blogPost
-        ], 201);
+            'status' => 'fail',
+            'message' => 'You are not allow to perform this operation'
+        ]);
 
     }
 
@@ -285,27 +294,19 @@ class BlogPostController extends Controller
         // Check user authorization
         $loggedInUser = Auth::user();
 
-        if ($loggedInUser->role == 'admin')
-        {
+        // Check additional condition to restrict authorized edit
+        if ($loggedInUser->id == $blogPost->user_id || Auth::user()->role == 'admin') {
             BlogPost::destroy($id); // It will delete record in database
+
             return response()->json([
                 'status' => 'success',
                 'message' => 'Post deleted successfully!'
             ], 201);
         }
 
-        if ($loggedInUser->id != $blogPost->user_id)
-        {
-            return response()->json([
-                'status' => 'fail',
-                'message' => 'Un-authorized user!'
-            ], 400);
-        }
-
-        BlogPost::destroy($id); // It will delete record in database
         return response()->json([
-            'status' => 'success',
-            'message' => 'Post deleted successfully!'
-        ], 201);
+            'status' => 'fail',
+            'message' => 'You are not allowed to perform this operation'
+        ], 400);
     }
 }
