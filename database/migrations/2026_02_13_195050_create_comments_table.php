@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->integer('post_id');
             $table->integer('user_id');
-            $table->integer('parent_id');
+            $table->integer('parent_id')->default(0);
             $table->text('content');
             $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
             $table->timestamps();

@@ -3,6 +3,7 @@
 use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\BlogCategoryController;
 use App\Http\Controllers\API\BlogPostController;
+use App\Http\Controllers\API\CommentController;
 use App\Http\Controllers\API\LikeController;
 use App\Http\Controllers\API\StudentApiController;
 use App\Http\Controllers\API\TestApiController;
@@ -32,6 +33,13 @@ Route::group(['middleware' => 'auth:sanctum'], function(){
 
     Route::post('post/react', [LikeController::class, 'react'])->name('react');
 
+    // Blog post comments  routes
+    Route::apiResource('comments', CommentController::class);
+
+    Route::get('comments', [CommentController::class, 'index'])->name('commentIndex')->middleware(['role:admin']);
+
+    Route::post('comments/change-status', [CommentController::class, 'changePostStatus'])->middleware(['role:admin']);
+
 });
 
 // Get all the categories
@@ -43,3 +51,5 @@ Route::get('posts', [BlogPostController::class, 'index']);
 Route::get('posts/{post}', [BlogPostController::class, 'show']);
 
 Route::get('post/reactions/{post}', [LikeController::class, 'reactions'])->name('reactions');
+
+Route::get('comments/{comment}', [CommentController::class, 'show'])->name('showComments');
