@@ -3,6 +3,7 @@
 use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\BlogCategoryController;
 use App\Http\Controllers\API\BlogPostController;
+use App\Http\Controllers\API\LikeController;
 use App\Http\Controllers\API\StudentApiController;
 use App\Http\Controllers\API\TestApiController;
 use Illuminate\Http\Request;
@@ -29,6 +30,8 @@ Route::group(['middleware' => 'auth:sanctum'], function(){
     Route::apiResource('posts', BlogPostController::class)->middleware(['role:admin,author']);
     Route::post('blog-post-image/{post}', [BlogPostController::class, 'blogPostImage'])->name('blog-post-image')->middleware(['role:admin,author']);
 
+    Route::post('post/react', [LikeController::class, 'react'])->name('react');
+
 });
 
 // Get all the categories
@@ -39,3 +42,4 @@ Route::get('categories/{category}', [BlogCategoryController::class, 'show']);
 Route::get('posts', [BlogPostController::class, 'index']);
 Route::get('posts/{post}', [BlogPostController::class, 'show']);
 
+Route::get('post/reactions/{post}', [LikeController::class, 'reactions'])->name('reactions');
